@@ -5,7 +5,9 @@ from sympy import Matrix
 N = 115792089237316195423570985008687907852837564279074904382605163141518161494337
 SECRET_PRIVATE_KEY = 9876543210123456789012345678901234567890  # 256-bit private key
 BITS_LEAKED = 8
-NUM_SIGNATURES = 30  # Larger leak requires fewer dimensions to resolve
+
+# Increased slightly to give the lattice more "tightness"
+NUM_SIGNATURES = 35  
 
 def generate_256bit_data():
     instances = []
@@ -24,7 +26,7 @@ def generate_256bit_data():
         s_inv = pow(s, -1, N)
         t = (r * s_inv) % N
         u = (alpha - (z * s_inv)) % N
-        instances.append((t, u))
+        instances.append((t, u))  # Appends a tuple of (t, u)
         
     return instances, error_bound
 
@@ -35,9 +37,12 @@ dim = NUM_SIGNATURES + 2
 # 2. Build Python list matrix structure
 raw_matrix = [[0] * dim for _ in range(dim)]
 for i in range(NUM_SIGNATURES):
+    t_val = signatures[i][0]  # Correctly extract 't' from the tuple
+    u_val = signatures[i][1]  # Correctly extract 'u' from the tuple
+    
     raw_matrix[i][i] = N
-    raw_matrix[NUM_SIGNATURES][i] = signatures[i][0]    # t_i
-    raw_matrix[NUM_SIGNATURES + 1][i] = signatures[i][1]  # u_i
+    raw_matrix[NUM_SIGNATURES][i] = t_val    
+    raw_matrix[NUM_SIGNATURES + 1][i] = u_val  
 
 raw_matrix[NUM_SIGNATURES][NUM_SIGNATURES] = 1
 raw_matrix[NUM_SIGNATURES + 1][NUM_SIGNATURES + 1] = B_bound
@@ -45,12 +50,11 @@ raw_matrix[NUM_SIGNATURES + 1][NUM_SIGNATURES + 1] = B_bound
 print(f"Initializing {dim}x{dim} arbitrary-precision SymPy matrix...")
 sympy_matrix = Matrix(raw_matrix)
 
-# 3. Run LLL orthogonalization logic using SymPy's lowercase method
+# 3. Run LLL orthogonalization logic
 print("Reducing matrix (this handles 256-bit integers natively)...")
 reduced_basis_matrix = sympy_matrix.lll() 
 
-# Convert the resulting SymPy Matrix back into a standard 2D Python list
-# This completely avoids SymPy syntax changes across different versions
+# Convert SymPy matrix structure to standard 2D Python list
 reduced_rows = reduced_basis_matrix.tolist()
 
 # 4. Parse the output rows for the key
@@ -65,4 +69,4 @@ for row in reduced_rows:
 
 if not found:
     print("\n[INFO] Lattice reduction completed, but shortest vector path was unaligned.")
-    print("Try running the script again or increasing NUM_SIGNATURES slightly.")
+    print("Try increasing BITS_LEAKED to 10 or 12 to make the bounds even tighter.")
