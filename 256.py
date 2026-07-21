@@ -47,12 +47,15 @@ sympy_matrix = Matrix(raw_matrix)
 
 # 3. Run LLL orthogonalization logic using SymPy's lowercase method
 print("Reducing matrix (this handles 256-bit integers natively)...")
-reduced_basis = sympy_matrix.lll()  # Corrected to lowercase
+reduced_basis_matrix = sympy_matrix.lll() 
+
+# Convert the resulting SymPy Matrix back into a standard 2D Python list
+# This completely avoids SymPy syntax changes across different versions
+reduced_rows = reduced_basis_matrix.tolist()
 
 # 4. Parse the output rows for the key
-# SymPy's .lll() returns a list of Matrix rows, so we loop over them directly
 found = False
-for row in reduced_basis:
+for row in reduced_rows:
     potential_d = abs(int(row[NUM_SIGNATURES]))
     if potential_d == SECRET_PRIVATE_KEY:
         print(f"\n[SUCCESS] Extracted full 256-bit key: {potential_d}")
@@ -62,4 +65,4 @@ for row in reduced_basis:
 
 if not found:
     print("\n[INFO] Lattice reduction completed, but shortest vector path was unaligned.")
-    print("Try increasing NUM_SIGNATURES to bound the target tighter.")
+    print("Try running the script again or increasing NUM_SIGNATURES slightly.")
