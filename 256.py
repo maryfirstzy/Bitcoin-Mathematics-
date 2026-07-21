@@ -1,4 +1,4 @@
-      import random
+ import random
 from sympy import Matrix
 
 # Real 256-bit secp256k1 order
@@ -37,8 +37,8 @@ dim = NUM_SIGNATURES + 2
 # 2. Build Python list matrix structure
 raw_matrix = [[0] * dim for _ in range(dim)]
 for i in range(NUM_SIGNATURES):
-    t_val = signatures[i][0]  # FIXED: Correctly extract 't' using index [0]
-    u_val = signatures[i][1]  # FIXED: Correctly extract 'u' using index [1]
+    t_val = signatures[i][0]  # Correctly extract 't' using index 0
+    u_val = signatures[i][1]  # Correctly extract 'u' using index 1
     
     raw_matrix[i][i] = N
     raw_matrix[NUM_SIGNATURES][i] = t_val    
@@ -69,5 +69,4 @@ for row in reduced_rows:
 
 if not found:
     print("\n[INFO] Lattice reduction completed, but shortest vector path was unaligned.")
-    print("Double check that BITS_LEAKED and matrix bounds match exactly.")
-  
+     
