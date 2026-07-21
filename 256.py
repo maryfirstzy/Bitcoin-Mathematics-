@@ -36,8 +36,8 @@ dim = NUM_SIGNATURES + 2
 raw_matrix = [[0] * dim for _ in range(dim)]
 for i in range(NUM_SIGNATURES):
     raw_matrix[i][i] = N
-    raw_matrix[NUM_SIGNATURES][i] = signatures[i][0]
-    raw_matrix[NUM_SIGNATURES + 1][i] = signatures[i][1]
+    raw_matrix[NUM_SIGNATURES][i] = signatures[i][0]    # t_i
+    raw_matrix[NUM_SIGNATURES + 1][i] = signatures[i][1]  # u_i
 
 raw_matrix[NUM_SIGNATURES][NUM_SIGNATURES] = 1
 raw_matrix[NUM_SIGNATURES + 1][NUM_SIGNATURES + 1] = B_bound
@@ -45,18 +45,21 @@ raw_matrix[NUM_SIGNATURES + 1][NUM_SIGNATURES + 1] = B_bound
 print(f"Initializing {dim}x{dim} arbitrary-precision SymPy matrix...")
 sympy_matrix = Matrix(raw_matrix)
 
-# 3. Run LLL orthogonalization logic on the high-dimensional matrix
+# 3. Run LLL orthogonalization logic using SymPy's lowercase method
 print("Reducing matrix (this handles 256-bit integers natively)...")
-reduced_basis = sympy_matrix.LLL()
+reduced_basis = sympy_matrix.lll()  # Corrected to lowercase
 
 # 4. Parse the output rows for the key
+# SymPy's .lll() returns a list of Matrix rows, so we loop over them directly
 found = False
-for row in reduced_basis.tolist():
-    potential_d = abs(row[NUM_SIGNATURES])
+for row in reduced_basis:
+    potential_d = abs(int(row[NUM_SIGNATURES]))
     if potential_d == SECRET_PRIVATE_KEY:
         print(f"\n[SUCCESS] Extracted full 256-bit key: {potential_d}")
+        print(f"Key in Hex: {hex(potential_d)}")
         found = True
         break
 
 if not found:
-    print("\n[INFO] Lattice reduction completed, but shortest vector path was unaligned. Try increasing NUM_SIGNATURES.")
+    print("\n[INFO] Lattice reduction completed, but shortest vector path was unaligned.")
+    print("Try increasing NUM_SIGNATURES to bound the target tighter.")
